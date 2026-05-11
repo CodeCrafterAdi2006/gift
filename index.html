@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, Vesperah</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #8b0000;
+            --secondary-accent: #4a0404;
+            --text-color: #FFF8F0;
+            --gold-color: #d4af37;
+            --font-serif: 'Playfair Display', serif;
+            --font-poem: 'Cormorant Garamond', serif;
+        }
+
+        /* Atmospheric Background Elements */
+        .glow-sphere {
+            position: fixed;
+            border-radius: 100%;
+            filter: blur(120px);
+            opacity: 0.25;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--secondary-accent); }
+        .glow-2 { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #3b0000; }
+        .glow-center { 
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80vw; height: 80vw; 
+            background: radial-gradient(circle, rgba(74,4,4,0.15) 0%, transparent 70%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-serif);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Particles Background */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10; /* Elevated from 5 but below page */
+            pointer-events: none;
+        }
+
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4rem 1.5rem;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease-in-out;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Responsive centering: Center if tall, start if short */
+        @media (min-height: 850px) {
+            .page { justify-content: center; }
+        }
+        @media (max-height: 849px) {
+            .page { justify-content: flex-start; }
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Nav Controls */
+        .nav-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 3.5rem;
+            margin-bottom: 2rem; /* Buffer at bottom */
+            z-index: 20;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.8rem 1.8rem;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.25em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .back-btn:hover {
+            border-color: var(--accent-color);
+            color: white;
+            background: rgba(139, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Page 1 (Bold Typography Landing) */
+        header.page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            width: 100%;
+            position: relative;
+        }
+
+        h1.main-title {
+            font-size: clamp(3.5rem, 15vw, 9rem);
+            line-height: 0.9;
+            font-weight: 300;
+            letter-spacing: -0.04em;
+            margin: 0;
+            color: var(--text-color);
+            text-shadow: 0 0 40px rgba(139, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .subtext {
+            font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            color: var(--accent-color);
+            font-weight: 700;
+            opacity: 0.9;
+            margin-top: 1rem;
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.3);
+            display: block;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            max-width: 800px;
+            width: 100%;
+            position: relative;
+            z-index: 60;
+        }
+
+        @media (min-width: 480px) {
+            .button-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (min-width: 768px) {
+            .button-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .taunt-btn {
+            background: rgba(15, 15, 15, 0.85);
+            border: 1px solid var(--secondary-accent);
+            color: var(--text-color);
+            padding: 1.2rem 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            width: 100%;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 1;
+            position: relative;
+            z-index: 61;
+        }
+
+        .taunt-btn:hover {
+            background: var(--secondary-accent);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(74, 4, 4, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .cta-container {
+            margin: 5rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            z-index: 11;
+            width: 100%;
+        }
+
+        .divider {
+            width: 120px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+        }
+
+        .gift-btn {
+            background: var(--secondary-accent);
+            border: none;
+            color: white;
+            padding: 1rem 3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            font-size: 0.75rem;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(74, 4, 4, 0.5);
+            transition: all 0.3s;
+        }
+
+        .gift-btn:hover {
+            background: var(--accent-color);
+            box-shadow: 0 0 40px rgba(139, 0, 0, 0.6);
+        }
+
+        /* Page 2 (Cinematic Poem) */
+        .glass-panel {
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--secondary-accent);
+            padding: 3rem 3rem 5rem 3rem; /* Extra bottom padding */
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            text-align: center;
+            position: relative;
+            z-index: 60;
+        }
+
+        .poem-title {
+            color: var(--gold-color);
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 300;
+            font-style: italic;
+        }
+
+        .poem-line {
+            font-family: var(--font-poem);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* Page 3 (Image) */
+        .image-wrapper {
+            position: relative;
+            max-width: 850px;
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid rgba(139, 0, 0, 0.2);
+            background: rgba(15, 15, 15, 0.5);
+        }
+
+        .main-image {
+            width: 100%;
+            height: auto;
+            max-height: 60vh;
+            display: block;
+            object-fit: cover;
+            box-shadow: 0 0 80px rgba(0,0,0,0.5);
+        }
+
+        .absolute-hb {
+            position: absolute;
+            top: -3.5rem;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            color: rgba(255, 255, 255, 1);
+            text-shadow: 0 0 25px rgba(139, 0, 0, 0.8);
+            font-style: italic;
+        }
+
+        .image-footer {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .footer-tagline {
+            text-transform: uppercase;
+            font-size: 0.6rem;
+            letter-spacing: 0.5em;
+            opacity: 0.4;
+            margin-top: 3rem;
+        }
+
+        /* Audio Toggle */
+        .audio-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Toast Styling */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 1rem 2rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            z-index: 1000;
+            opacity: 0;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .next-btn {
+            margin-top: 3rem;
+            background: rgba(139, 0, 0, 0.1);
+            border: 1px solid var(--accent-color);
+            color: white;
+            padding: 0.8rem 2.5rem;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            display: inline-block;
+        }
+
+        .next-btn.show { opacity: 1; visibility: visible; }
+        .next-btn:hover { background: var(--accent-color); transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+    <div class="glow-sphere glow-center"></div>
+
+    <canvas id="particle-canvas"></canvas>
+    
+    <button class="audio-toggle" id="audio-toggle">
+        <span id="audio-icon">♪</span>
+        <span style="font-size: 0.6rem; letter-spacing: 0.1em; opacity: 0.6;">AUDIO STATUS</span>
+    </button>
+    
+    <audio id="bg-audio" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Page 1: Bold Landing -->
+    <section id="page-1" class="page active">
+        <header class="page-header">
+            <h1 class="main-title">Vesperah</h1>
+            <p class="subtext">Happy Birthday ...or as the mortals call you, Hiba</p>
+        </header>
+        
+        <div class="button-grid">
+            <button class="taunt-btn" data-type="A Secret">A Secret</button>
+            <button class="taunt-btn" data-type="A Truth">A Truth</button>
+            <button class="taunt-btn" data-type="A Warning">A Warning</button>
+            <button class="taunt-btn" data-type="A Whisper">A Whisper</button>
+            <button class="taunt-btn" data-type="A Curse">A Curse</button>
+            <button class="taunt-btn" data-type="A Gift">A Gift</button>
+            <button class="taunt-btn" data-type="A Promise">A Promise</button>
+            <button class="taunt-btn" data-type="A Dare">A Dare</button>
+        </div>
+
+        <div class="cta-container">
+            <div class="divider"></div>
+            <button class="gift-btn" onclick="goToPage(2)">Here is your gift &rarr;</button>
+        </div>
+        
+        <footer class="footer-tagline">Obsessive Romance System v1.0</footer>
+    </section>
+
+    <!-- Page 2: Glass Panel Poem -->
+    <section id="page-2" class="page">
+        <div class="glass-panel">
+            <div class="poem-container" id="poem-container">
+                <!-- Lines dynamic -->
+            </div>
+            <div class="nav-container">
+                <button class="back-btn" onclick="goToPage(1)">&larr; Back</button>
+                <button class="next-btn" id="poem-next" onclick="goToPage(3)">One Last Thing &rarr;</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page 3: Full Image Reveal -->
+    <section id="page-3" class="page">
+        <header class="page-header" style="margin-bottom: 2rem;">
+            <p class="subtext" style="opacity: 0.4;">Us. Always.</p>
+        </header>
+
+        <div class="image-wrapper" id="image-wrapper" style="opacity: 0; transform: scale(1.05);">
+            <div class="absolute-hb">Happy Birthday</div>
+            <img src="https://images.unsplash.com/photo-1544070078-a212eda27b49?auto=format&fit=crop&q=80&w=2000" 
+                 alt="Romantic Celebration" 
+                 id="final-image" 
+                 class="main-image"
+                 onerror="this.src='https://images.unsplash.com/photo-1518173946687-a4c8a9833786?auto=format&fit=crop&q=80&w=2000'">
+            <div class="image-footer">
+                <p class="image-caption" style="font-family: var(--font-poem); color: rgba(255,255,255,0.6); font-style: italic;">Some things don't need words.</p>
+            </div>
+        </div>
+
+        <div class="nav-container">
+            <button class="back-btn" onclick="goToPage(2)">&larr; Back to Poem</button>
+        </div>
+    </section>
+
+    <div class="toast" id="toast">Message</div>
+    <div id="transition-overlay" style="position:fixed; inset:0; background:black; z-index:9999; pointer-events:none; opacity:0;"></div>
+
+    <script>
+        // Taunt Messages
+        const taunts = [
+            "Lose some weight, baby elephant 🐘",
+            "Get that ass moving, lazy panda 🐼",
+            "Why not smile today, princess? 👑",
+            "Not after my organs today, witch? 🖤",
+            "Stop being a bitch and eat some cake 🎂",
+            "You're turning older. Not wiser. Just older.",
+            "Still can't cook? Happy birthday anyway 🔥",
+            "You looked at your phone before saying happy birthday to me didn't you 😒",
+            "Today's excuse to be dramatic: your birthday. Use it.",
+            "Did you moisturize? No? Typical. Happy birthday."
+        ];
+
+        // Poem Lines
+        const poemLines = [
+            { text: "For You, Always", isTitle: true },
+            { text: "", isGap: true },
+            { text: "You're annoying in the sweetest way," },
+            { text: "The kind that makes me smile and stay." },
+            { text: "You don't look my way much these days," },
+            { text: "Lost in his love, in his warm gaze." },
+            { text: "", isGap: true },
+            { text: "But that voice of yours—that sweet, sharp sound—" },
+            { text: "Could pull me up from underground." },
+            { text: "So never lose it, keep it bright," },
+            { text: "It's the best thing about you, every night." },
+            { text: "", isGap: true },
+            { text: "So happy birthday, dear, today." },
+            { text: "I hope your smile never fades away." },
+            { text: "I hope you laugh, I hope you shine—" },
+            { text: "You'll always be this stupid heart of mine." }
+        ];
+
+        // Particle System (Rose Petals/Embers)
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + Math.random() * 200;
+                this.size = Math.random() * 12 + 4; // Larger for petals
+                this.speedY = Math.random() * 0.5 + 0.3;
+                this.speedX = (Math.random() - 0.5) * 1;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rSpeed = (Math.random() - 0.5) * 0.02;
+                this.opacity = Math.random() * 0.4 + 0.1;
+                
+                // Dark romance colors
+                const colors = ['#720e0e', '#4a0404', '#1a0000', '#b40050'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.y -= this.speedY;
+                this.x += Math.sin(this.y * 0.01) * 0.5 + this.speedX;
+                this.rotation += this.rSpeed;
+                if (this.y < -50) this.init();
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = this.color;
+                
+                // Draw petal shape (ellipse)
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size, this.size * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Subtle glow for embers
+                if (Math.random() > 0.95) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        for (let i = 0; i < 60; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Audio Management
+        const audio = document.getElementById('bg-audio');
+        const audioBtn = document.getElementById('audio-toggle');
+        const audioIcon = document.getElementById('audio-icon');
+        let audioStarted = false;
+
+        function toggleAudio() {
+            if (audio.paused) {
+                audio.play();
+                audioIcon.textContent = '♬';
+            } else {
+                audio.pause();
+                audioIcon.textContent = '♪';
+            }
+        }
+
+        audioBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleAudio();
+        });
+
+        // Global click to initiate audio if not already started
+        document.addEventListener('click', () => {
+            if (!audioStarted) {
+                audio.play().then(() => {
+                    audioIcon.textContent = '♬';
+                    audioStarted = true;
+                }).catch(() => {});
+            }
+        }, { once: true });
+
+        // Robust animation initialization
+        function initApp() {
+            console.log("Initializing App...");
+            
+            // Set initial state before GSAP to avoid flashes
+            gsap.set(['.main-title', '.subtext', '.taunt-btn', '.cta-container'], { opacity: 0, y: 30 });
+
+            const tl = gsap.timeline();
+            
+            tl.to('.main-title', { opacity: 1, y: 0, duration: 1.5, ease: 'power3.out' })
+              .to('.subtext', { opacity: 0.9, y: 0, duration: 1, ease: 'power2.out' }, "-=1")
+              .to('.taunt-btn', { 
+                  opacity: 1, 
+                  y: 0, 
+                  duration: 0.8, 
+                  stagger: 0.1, 
+                  ease: "power2.out" 
+              }, "-=0.5")
+              .to('.cta-container', { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, "-=0.5");
+        }
+
+        if (document.readyState === 'complete') {
+            initApp();
+        } else {
+            window.addEventListener('load', initApp);
+        }
+
+        // Taunt Click Logic
+        const toast = document.getElementById('toast');
+        const tauntBtns = document.querySelectorAll('.taunt-btn');
+
+        tauntBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const randomMsg = taunts[Math.floor(Math.random() * taunts.length)];
+                showToast(randomMsg);
+                
+                // Shake effect on toast
+                gsap.fromTo(toast, { x: '-52%' }, { x: '-48%', duration: 0.1, repeat: 5, yoyo: true });
+            });
+        });
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            gsap.to(toast, { opacity: 1, y: -20, duration: 0.5, ease: 'power2.out' });
+            
+            setTimeout(() => {
+                gsap.to(toast, { opacity: 0, y: 0, duration: 0.5, ease: 'power2.in' });
+            }, 3000);
+        }
+
+        // Navigation & Transitions
+        function goToPage(pageNumber) {
+            const overlay = document.getElementById('transition-overlay');
+            
+            gsap.to(overlay, { 
+                opacity: 1, 
+                duration: 0.8, 
+                onComplete: () => {
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                    const targetPage = document.getElementById(`page-${pageNumber}`);
+                    targetPage.classList.add('active');
+                    targetPage.scrollTop = 0; // Reset scroll on page change
+                    
+                    if (pageNumber === 2) startPoem();
+                    if (pageNumber === 3) startImageReveal();
+                    
+                    gsap.to(overlay, { opacity: 0, duration: 0.8 });
+                }
+            });
+        }
+
+        // Removed redundant load listener
+
+        // Poem Logic
+        function startPoem() {
+            const container = document.getElementById('poem-container');
+            container.innerHTML = '';
+            
+            poemLines.forEach((line, index) => {
+                const p = document.createElement('div');
+                p.className = 'poem-line' + (line.isTitle ? ' poem-title' : '');
+                if (line.isGap) p.style.height = '1rem';
+                p.textContent = line.text;
+                container.appendChild(p);
+                
+                gsap.to(p, {
+                    opacity: 1,
+                    scale: 1,
+                    z: 0,
+                    filter: 'blur(0px)',
+                    duration: 0.8,
+                    delay: index * 0.4,
+                    ease: "power2.out"
+                });
+            });
+
+            // Show next button after poem (Faster)
+            setTimeout(() => {
+                const nextBtn = document.getElementById('poem-next');
+                nextBtn.classList.add('show');
+                gsap.set(nextBtn, { visibility: 'visible' });
+                gsap.to(nextBtn, { opacity: 1, y: 0, duration: 1 });
+            }, (poemLines.length * 400) + 1000);
+        }
+
+        // Image Logic
+        function startImageReveal() {
+            const wrapper = document.getElementById('image-wrapper');
+            gsap.to(wrapper, { 
+                opacity: 1, 
+                scale: 1, 
+                duration: 2, 
+                ease: 'power2.out' 
+            });
+        }
+    </script>
+</body>
+</html>
